@@ -54,6 +54,22 @@ node index.js
 
 `api/webhook.js` handles Jira `POST` webhook payloads. Deploy it to a platform that supports the `api/` function convention, configure the environment variables there, and point a Jira webhook at the deployed endpoint.
 
+## Scaling duplicate detection
+
+The current prototype retrieves existing tickets and asks the LLM to compare the new ticket with them. This is simple, but the prompt becomes slower and more expensive as the project grows.
+
+A common approach at larger scale is:
+
+1. **Create embeddings.** Convert each ticket's title and description into a vector once, then store it. Refresh the vector when the ticket changes.
+2. **Find similar candidates.** When a new ticket arrives, use a vector search to retrieve the top 10–20 most similar tickets. This quickly narrows the search.
+3. **Use the LLM for the final decision.** Ask the LLM to compare the new ticket only with those shortlisted candidates and decide whether they describe the same underlying bug.
+
+In simple terms: **embeddings find likely matches; the LLM makes the final judgment.**
+
+For a small project, an in-memory JavaScript array with cosine similarity may be enough. At larger scale, common vector stores include Pinecone, Weaviate, pgvector, and Qdrant. Embeddings can be generated with a service such as OpenAI's `text-embedding-3-small` or with an open-source model such as `sentence-transformers`.
+
+The exact number of candidates should be tuned using real tickets. Ten to twenty is a useful starting point, not a fixed rule.
+
 ## Project structure
 
 ```text
@@ -70,7 +86,3 @@ node index.js
 - The service currently uses Groq's `openai/gpt-oss-120b` model.
 - The Jira API account must be able to search issues, add comments, and update labels.
 - There is currently no automated test suite or npm start script.
-
-## License
-
-This project is currently released under the license declared in `package.json`.

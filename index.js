@@ -33,7 +33,7 @@ async function run() {
       console.error(`❌ Failed on ${ticket.key}:`, err.message);
     }
 
-    await new Promise((r) => setTimeout(r, 2000)); // small buffer, Groq is fast
+    await new Promise((r) => setTimeout(r, 2000));
   }
 }
 
